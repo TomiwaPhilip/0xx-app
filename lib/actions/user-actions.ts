@@ -11,7 +11,7 @@ export async function getUser(): Promise<User | null> {
     if (!privyUser) return null
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Find or create user
     let user = await db.collection("users").findOne({ privyId: privyUser.id })
@@ -22,7 +22,7 @@ export async function getUser(): Promise<User | null> {
         privyId: privyUser.id,
         email: privyUser.email?.address,
         walletAddress: privyUser.wallet?.address,
-        name: privyUser.name,
+        name: undefined,
         userType: "normal", // Default to normal user
         supportedProjects: [],
         createdProjects: [],
@@ -53,7 +53,7 @@ export async function getUser(): Promise<User | null> {
 export async function getUserById(id: string): Promise<User | null> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const user = await db.collection("users").findOne({ _id: new ObjectId(id) })
 
@@ -84,7 +84,7 @@ export async function upgradeToBusinessUser(data: {
     }
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
@@ -114,7 +114,7 @@ export async function followUser(userId: string, targetUserId: string): Promise<
     }
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Add target user to current user's following list
     await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $addToSet: { following: targetUserId } })
@@ -134,13 +134,13 @@ export async function followUser(userId: string, targetUserId: string): Promise<
 export async function unfollowUser(userId: string, targetUserId: string): Promise<boolean> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Remove target user from current user's following list
-    await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $pull: { following: targetUserId } })
+    await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $pull: { following: targetUserId as any } })
 
     // Remove current user from target user's followers list
-    await db.collection("users").updateOne({ _id: new ObjectId(targetUserId) }, { $pull: { followers: userId } })
+    await db.collection("users").updateOne({ _id: new ObjectId(targetUserId) }, { $pull: { followers: userId as any} })
 
     revalidatePath(`/profile/${userId}`)
     revalidatePath(`/profile/${targetUserId}`)
@@ -162,7 +162,7 @@ export async function updateUserProfile(data: {
     const { userId, ...updateData } = data
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
@@ -193,7 +193,7 @@ export async function updateNotificationSettings(data: {
     const { userId, ...settings } = data
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
@@ -222,7 +222,7 @@ export async function updatePrivacySettings(data: {
     const { userId, ...settings } = data
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },

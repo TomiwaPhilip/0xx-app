@@ -6,7 +6,7 @@ import type { Project, User } from "@/lib/types"
 export async function searchProjects(query: string): Promise<Project[]> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Create a text index if it doesn't exist
     try {
@@ -43,7 +43,7 @@ export async function searchProjects(query: string): Promise<Project[]> {
 export async function searchUsers(query: string): Promise<User[]> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Create a text index if it doesn't exist
     try {

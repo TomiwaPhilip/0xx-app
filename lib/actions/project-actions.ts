@@ -9,7 +9,7 @@ import { ObjectId } from "mongodb"
 export async function getProjects(): Promise<Project[]> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const projects = await db.collection("projects").find({}).sort({ createdAt: -1 }).toArray()
 
@@ -26,7 +26,7 @@ export async function getProjects(): Promise<Project[]> {
 export async function getProjectById(id: string): Promise<Project | null> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const project = await db.collection("projects").findOne({ _id: new ObjectId(id) })
 
@@ -45,7 +45,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
 export async function getProjectsByCreator(creatorId: string): Promise<Project[]> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const projects = await db.collection("projects").find({ creatorId }).sort({ createdAt: -1 }).toArray()
 
@@ -62,7 +62,7 @@ export async function getProjectsByCreator(creatorId: string): Promise<Project[]
 export async function getSupportedProjects(userId: string): Promise<Project[]> {
   try {
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const user = await db.collection("users").findOne({ _id: new ObjectId(userId) })
     if (!user || !user.supportedProjects || user.supportedProjects.length === 0) {
@@ -92,7 +92,7 @@ export async function supportProject(projectId: string): Promise<boolean> {
     if (!user) throw new Error("User not authenticated")
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     // Get the project
     const project = await db.collection("projects").findOne({ _id: new ObjectId(projectId) })
@@ -132,7 +132,7 @@ export async function addComment(projectId: string, commentText: string): Promis
     if (!user) throw new Error("User not authenticated")
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const comment = {
       _id: new ObjectId().toString(),
@@ -143,7 +143,7 @@ export async function addComment(projectId: string, commentText: string): Promis
       createdAt: new Date(),
     }
 
-    await db.collection("projects").updateOne({ _id: new ObjectId(projectId) }, { $push: { comments: comment } })
+    await db.collection("projects").updateOne({ _id: new ObjectId(projectId) }, { $push: { comments: comment as any } })
 
     revalidatePath(`/projects/${projectId}`)
     return true
@@ -168,7 +168,7 @@ export async function createProject(projectData: {
     if (user.userType !== "business") throw new Error("Only business users can create projects")
 
     const client = await clientPromise
-    const db = client.db("zora")
+    const db = client.db("0xx")
 
     const newProject = {
       ...projectData,

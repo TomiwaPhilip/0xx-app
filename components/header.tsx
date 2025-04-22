@@ -75,8 +75,8 @@ export default function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="h-10 w-10 cursor-pointer">
-                <AvatarImage src={user?.avatar?.url || "/images/default-avatar.png"} alt={user?.name || "User"} />
-                <AvatarFallback>{user?.name?.charAt(0) || user?.email?.address?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarImage src={user?.twitter?.profilePictureUrl|| "/images/default-avatar.png"} alt={user?.twitter?.name || "User"} />
+                <AvatarFallback>{user?.twitter?.name?.charAt(0) || user?.email?.address?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
