@@ -33,6 +33,15 @@ export interface User {
   following: string[]
   followers: string[]
   supportsReceived: number
+  notificationSettings?: {
+    emailNotifications?: boolean
+    supportNotifications?: boolean
+    commentNotifications?: boolean
+  }
+  privacySettings?: {
+    publicProfile?: boolean
+    showSupporters?: boolean
+  }
   createdAt: Date
   updatedAt: Date
 }

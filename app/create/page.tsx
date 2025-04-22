@@ -1,9 +1,9 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import DetailHeader from "@/components/detail-header"
-import CreatePostForm from "@/components/create-post-form"
 import Loading from "@/components/loading"
 import { getUser } from "@/lib/actions/user-actions"
+import PrivyWalletWrapper from "@/components/privy-wallet-wrapper"
 
 export default async function CreatePage() {
   const user = await getUser()
@@ -22,7 +22,7 @@ export default async function CreatePage() {
       <div className="container mx-auto px-4 max-w-6xl">
         <DetailHeader title="Create Post" />
         <Suspense fallback={<Loading />}>
-          <CreatePostForm userId={user._id} />
+          <PrivyWalletWrapper userId={user._id} />
         </Suspense>
       </div>
     </main>

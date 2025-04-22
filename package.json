@@ -1,9 +1,9 @@
 {
-  "name": "0xx-app",
+  "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 2009",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -58,21 +58,14 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
-    "socks": "latest",
-    "snappy": "latest",
-    "kerberos": "latest",
-    "gcp-metadata": "latest",
-    "@mongodb-js/zstd": "latest",
-    "mongodb-client-encryption": "latest",
-    "@aws-sdk/credential-providers": "latest",
     "viem": "latest",
     "@abstract-foundation/agw-client": "latest",
     "@solana/web3.js": "latest",
     "@solana/spl-token": "latest",
     "permissionless": "latest",
-    "mongodb": "latest",
     "@privy-io/server-auth": "latest",
-    "@privy-io/react-auth": "latest"
+    "@privy-io/react-auth": "latest",
+    "mongoose": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

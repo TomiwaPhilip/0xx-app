@@ -1,68 +1,61 @@
 "use server"
-import { getPrivyUserFromCookie } from "@/lib/privy-server"
-import clientPromise from "@/lib/mongodb"
-import type { User } from "@/lib/types"
-import { ObjectId } from "mongodb"
-import { revalidatePath } from "next/cache"
 
-export async function getUser(): Promise<User | null> {
+import { getPrivyUserFromCookie } from "@/lib/privy-server"
+import dbConnect from "@/lib/mongoose/db"
+import User from "@/lib/mongoose/models/user"
+import { revalidatePath } from "next/cache"
+import type { User as UserType } from "@/lib/types"
+
+export async function getUser(): Promise<UserType | null> {
   try {
     const privyUser = await getPrivyUserFromCookie()
     if (!privyUser) return null
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
     // Find or create user
-    let user = await db.collection("users").findOne({ privyId: privyUser.id })
+    let user = await User.findOne({ privyId: privyUser.id })
 
     if (!user) {
       // Create new user
-      const newUser = {
+      user = new User({
         privyId: privyUser.id,
         email: privyUser.email?.address,
         walletAddress: privyUser.wallet?.address,
-        name: undefined,
+        name: privyUser.name,
         userType: "normal", // Default to normal user
         supportedProjects: [],
         createdProjects: [],
         following: [],
         followers: [],
         supportsReceived: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
-      const result = await db.collection("users").insertOne(newUser)
-      user = {
-        ...newUser,
-        _id: result.insertedId,
-      }
+      await user.save()
     }
 
     return {
-      ...user,
+      ...user.toObject(),
       _id: user._id.toString(),
-    } as User
+    } as UserType
   } catch (error) {
     console.error("Failed to get user:", error)
     return null
   }
 }
 
-export async function getUserById(id: string): Promise<User | null> {
+export async function getUserById(id: string): Promise<UserType | null> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const user = await db.collection("users").findOne({ _id: new ObjectId(id) })
+    const user = await User.findById(id)
 
     if (!user) return null
 
     return {
-      ...user,
+      ...user.toObject(),
       _id: user._id.toString(),
-    } as User
+    } as UserType
   } catch (error) {
     console.error("Failed to get user by ID:", error)
     return null
@@ -83,21 +76,14 @@ export async function upgradeToBusinessUser(data: {
       throw new Error("Insufficient Twitter followers")
     }
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          userType: "business",
-          twitterHandle,
-          twitterFollowers,
-          bio,
-          updatedAt: new Date(),
-        },
-      },
-    )
+    await User.findByIdAndUpdate(userId, {
+      userType: "business",
+      twitterHandle,
+      twitterFollowers,
+      bio,
+    })
 
     revalidatePath(`/profile/${userId}`)
     return true
@@ -113,14 +99,13 @@ export async function followUser(userId: string, targetUserId: string): Promise<
       throw new Error("Cannot follow yourself")
     }
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
     // Add target user to current user's following list
-    await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $addToSet: { following: targetUserId } })
+    await User.findByIdAndUpdate(userId, { $addToSet: { following: targetUserId } })
 
     // Add current user to target user's followers list
-    await db.collection("users").updateOne({ _id: new ObjectId(targetUserId) }, { $addToSet: { followers: userId } })
+    await User.findByIdAndUpdate(targetUserId, { $addToSet: { followers: userId } })
 
     revalidatePath(`/profile/${userId}`)
     revalidatePath(`/profile/${targetUserId}`)
@@ -133,14 +118,13 @@ export async function followUser(userId: string, targetUserId: string): Promise<
 
 export async function unfollowUser(userId: string, targetUserId: string): Promise<boolean> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
     // Remove target user from current user's following list
-    await db.collection("users").updateOne({ _id: new ObjectId(userId) }, { $pull: { following: targetUserId as any } })
+    await User.findByIdAndUpdate(userId, { $pull: { following: targetUserId } })
 
     // Remove current user from target user's followers list
-    await db.collection("users").updateOne({ _id: new ObjectId(targetUserId) }, { $pull: { followers: userId as any} })
+    await User.findByIdAndUpdate(targetUserId, { $pull: { followers: userId } })
 
     revalidatePath(`/profile/${userId}`)
     revalidatePath(`/profile/${targetUserId}`)
@@ -161,18 +145,9 @@ export async function updateUserProfile(data: {
   try {
     const { userId, ...updateData } = data
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
-      },
-    )
+    await User.findByIdAndUpdate(userId, updateData)
 
     revalidatePath(`/profile/${userId}`)
     revalidatePath(`/settings`)
@@ -192,18 +167,11 @@ export async function updateNotificationSettings(data: {
   try {
     const { userId, ...settings } = data
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          notificationSettings: settings,
-          updatedAt: new Date(),
-        },
-      },
-    )
+    await User.findByIdAndUpdate(userId, {
+      notificationSettings: settings,
+    })
 
     revalidatePath(`/settings`)
     return true
@@ -221,18 +189,11 @@ export async function updatePrivacySettings(data: {
   try {
     const { userId, ...settings } = data
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          privacySettings: settings,
-          updatedAt: new Date(),
-        },
-      },
-    )
+    await User.findByIdAndUpdate(userId, {
+      privacySettings: settings,
+    })
 
     revalidatePath(`/settings`)
     revalidatePath(`/profile/${userId}`)

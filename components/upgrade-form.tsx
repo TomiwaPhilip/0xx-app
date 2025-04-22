@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,7 +25,20 @@ export default function UpgradeForm({ userId }: { userId: string }) {
   const handleTwitterConnect = async () => {
     try {
       await linkTwitter()
-      setStep(2)
+
+      // Check if Twitter was successfully linked
+      if (user?.twitter?.username) {
+        setTwitterHandle(user.twitter.username)
+        setStep(2)
+      } else {
+        // Wait a moment and check again (Privy might need time to update)
+        setTimeout(() => {
+          if (user?.twitter?.username) {
+            setTwitterHandle(user.twitter.username)
+            setStep(2)
+          }
+        }, 2000)
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -34,6 +47,14 @@ export default function UpgradeForm({ userId }: { userId: string }) {
       })
     }
   }
+
+  useEffect(() => {
+    // If user has Twitter connected, pre-fill the handle and move to step 2
+    if (user?.twitter?.username && step === 1) {
+      setTwitterHandle(user.twitter.username)
+      setStep(2)
+    }
+  }, [user?.twitter?.username, step])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

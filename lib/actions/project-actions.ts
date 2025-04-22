@@ -1,85 +1,81 @@
 "use server"
 
-import clientPromise from "@/lib/mongodb"
-import type { Project } from "@/lib/types"
+import dbConnect from "@/lib/mongoose/db"
+import Project from "@/lib/mongoose/models/project"
+import User from "@/lib/mongoose/models/user"
+import Transaction from "@/lib/mongoose/models/transaction"
 import { getUser } from "./user-actions"
 import { revalidatePath } from "next/cache"
-import { ObjectId } from "mongodb"
+import mongoose from "mongoose"
+import type { Project as ProjectType } from "@/lib/types"
 
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(): Promise<ProjectType[]> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const projects = await db.collection("projects").find({}).sort({ createdAt: -1 }).toArray()
+    const projects = await Project.find().sort({ createdAt: -1 })
 
     return projects.map((project) => ({
-      ...project,
+      ...project.toObject(),
       _id: project._id.toString(),
-    })) as Project[]
+    })) as ProjectType[]
   } catch (error) {
     console.error("Failed to fetch projects:", error)
     return []
   }
 }
 
-export async function getProjectById(id: string): Promise<Project | null> {
+export async function getProjectById(id: string): Promise<ProjectType | null> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const project = await db.collection("projects").findOne({ _id: new ObjectId(id) })
+    const project = await Project.findById(id)
 
     if (!project) return null
 
     return {
-      ...project,
+      ...project.toObject(),
       _id: project._id.toString(),
-    } as Project
+    } as ProjectType
   } catch (error) {
     console.error("Failed to fetch project:", error)
     return null
   }
 }
 
-export async function getProjectsByCreator(creatorId: string): Promise<Project[]> {
+export async function getProjectsByCreator(creatorId: string): Promise<ProjectType[]> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const projects = await db.collection("projects").find({ creatorId }).sort({ createdAt: -1 }).toArray()
+    const projects = await Project.find({ creatorId }).sort({ createdAt: -1 })
 
     return projects.map((project) => ({
-      ...project,
+      ...project.toObject(),
       _id: project._id.toString(),
-    })) as Project[]
+    })) as ProjectType[]
   } catch (error) {
     console.error("Failed to fetch creator projects:", error)
     return []
   }
 }
 
-export async function getSupportedProjects(userId: string): Promise<Project[]> {
+export async function getSupportedProjects(userId: string): Promise<ProjectType[]> {
   try {
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const user = await db.collection("users").findOne({ _id: new ObjectId(userId) })
+    const user = await User.findById(userId)
     if (!user || !user.supportedProjects || user.supportedProjects.length === 0) {
       return []
     }
 
-    const projectIds = user.supportedProjects.map((id: string) => new ObjectId(id))
-    const projects = await db
-      .collection("projects")
-      .find({ _id: { $in: projectIds } })
-      .sort({ createdAt: -1 })
-      .toArray()
+    const projects = await Project.find({
+      _id: { $in: user.supportedProjects },
+    }).sort({ createdAt: -1 })
 
     return projects.map((project) => ({
-      ...project,
+      ...project.toObject(),
       _id: project._id.toString(),
-    })) as Project[]
+    })) as ProjectType[]
   } catch (error) {
     console.error("Failed to fetch supported projects:", error)
     return []
@@ -91,30 +87,32 @@ export async function supportProject(projectId: string): Promise<boolean> {
     const user = await getUser()
     if (!user) throw new Error("User not authenticated")
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
     // Get the project
-    const project = await db.collection("projects").findOne({ _id: new ObjectId(projectId) })
+    const project = await Project.findById(projectId)
     if (!project) throw new Error("Project not found")
 
     // Update user's supported projects
-    await db
-      .collection("users")
-      .updateOne({ _id: new ObjectId(user._id) }, { $addToSet: { supportedProjects: projectId } })
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: { supportedProjects: projectId },
+    })
 
     // Update project creator's supports received count
-    await db.collection("users").updateOne({ _id: new ObjectId(project.creatorId) }, { $inc: { supportsReceived: 1 } })
+    await User.findByIdAndUpdate(project.creatorId, {
+      $inc: { supportsReceived: 1 },
+    })
 
     // Add transaction record
-    await db.collection("transactions").insertOne({
+    const transaction = new Transaction({
       projectId,
       userId: user._id,
       userName: user.name || "Anonymous",
       action: "bought",
       price: project.price,
-      createdAt: new Date(),
     })
+
+    await transaction.save()
 
     revalidatePath("/")
     revalidatePath(`/projects/${projectId}`)
@@ -131,11 +129,10 @@ export async function addComment(projectId: string, commentText: string): Promis
     const user = await getUser()
     if (!user) throw new Error("User not authenticated")
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
     const comment = {
-      _id: new ObjectId().toString(),
+      _id: new mongoose.Types.ObjectId().toString(),
       userId: user._id,
       userName: user.name || "Anonymous",
       userImage: user.profileImage,
@@ -143,7 +140,9 @@ export async function addComment(projectId: string, commentText: string): Promis
       createdAt: new Date(),
     }
 
-    await db.collection("projects").updateOne({ _id: new ObjectId(projectId) }, { $push: { comments: comment as any } })
+    await Project.findByIdAndUpdate(projectId, {
+      $push: { comments: comment },
+    })
 
     revalidatePath(`/projects/${projectId}`)
     return true
@@ -167,24 +166,21 @@ export async function createProject(projectData: {
     if (!user) throw new Error("User not authenticated")
     if (user.userType !== "business") throw new Error("Only business users can create projects")
 
-    const client = await clientPromise
-    const db = client.db("0xx")
+    await dbConnect()
 
-    const newProject = {
+    const newProject = new Project({
       ...projectData,
       supportable: true,
       comments: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    })
 
-    const result = await db.collection("projects").insertOne(newProject)
-    const projectId = result.insertedId.toString()
+    const savedProject = await newProject.save()
+    const projectId = savedProject._id.toString()
 
     // Update user's created projects
-    await db
-      .collection("users")
-      .updateOne({ _id: new ObjectId(user._id) }, { $addToSet: { createdProjects: projectId } })
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: { createdProjects: projectId },
+    })
 
     revalidatePath("/")
     revalidatePath(`/profile/${user._id}`)

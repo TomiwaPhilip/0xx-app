@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { ImageIcon, Loader2 } from "lucide-react"
 
-export default function CreatePostForm({ userId }: { userId: string }) {
+export default function CreatePostForm({ userId, user, linkWallet }: { userId: string; user: any; linkWallet: any }) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("activism")
@@ -22,6 +22,7 @@ export default function CreatePostForm({ userId }: { userId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const router = useRouter()
+  const [needsWallet, setNeedsWallet] = useState(false)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -39,6 +40,14 @@ export default function CreatePostForm({ userId }: { userId: string }) {
 
   const handleImageClick = () => {
     fileInputRef.current?.click()
+  }
+
+  const checkWalletConnection = async () => {
+    if (!user?.wallet) {
+      setNeedsWallet(true)
+      return false
+    }
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,6 +68,12 @@ export default function CreatePostForm({ userId }: { userId: string }) {
         description: "Please add an image for your post",
         variant: "destructive",
       })
+      return
+    }
+
+    // Check if user has connected wallet
+    const hasWallet = await checkWalletConnection()
+    if (!hasWallet) {
       return
     }
 
@@ -94,6 +109,26 @@ export default function CreatePostForm({ userId }: { userId: string }) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  useEffect(() => {
+    if (user?.wallet && needsWallet) {
+      setNeedsWallet(false)
+    }
+  }, [user?.wallet, needsWallet])
+
+  if (needsWallet) {
+    return (
+      <div className="max-w-2xl mx-auto my-8 p-6 bg-white rounded-lg shadow-sm border">
+        <h1 className="text-4xl font-bold mb-6">Connect Wallet</h1>
+        <p className="mb-6 text-gray-600">
+          You need to connect a wallet to create a post. This allows you to receive support from the community.
+        </p>
+        <Button onClick={() => linkWallet()} className="w-full py-6 bg-black text-white hover:bg-gray-800">
+          Connect Wallet
+        </Button>
+      </div>
+    )
   }
 
   return (

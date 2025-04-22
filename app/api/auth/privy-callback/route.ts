@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   }
 
   // Set the token in a cookie
- (await cookies()).set("privy-token", token, {
+  cookies().set("privy-token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
