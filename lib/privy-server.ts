@@ -8,13 +8,13 @@ const privyClient = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET)
 
 export async function getPrivyUserFromCookie() {
   const cookieStore = cookies()
-  const privyToken = cookieStore.get("privy-token")
+  const privyToken = (await cookieStore).get("privy-token")
 
   if (!privyToken) return null
 
   try {
-    const { user } = await privyClient.verifyAuthToken(privyToken.value)
-    return user
+    const claim = await privyClient.verifyAuthToken(privyToken.value)
+    return privyClient.getUserById(claim.userId);
   } catch (error) {
     console.error("Failed to verify Privy token:", error)
     return null

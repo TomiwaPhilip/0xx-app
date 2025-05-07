@@ -22,7 +22,7 @@ export async function getUser(): Promise<UserType | null> {
         privyId: privyUser.id,
         email: privyUser.email?.address,
         walletAddress: privyUser.wallet?.address,
-        name: privyUser.name,
+        name: privyUser.twitter?.name || undefined,
         userType: "normal", // Default to normal user
         supportedProjects: [],
         createdProjects: [],
