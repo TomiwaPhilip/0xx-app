@@ -1,7 +1,7 @@
-const externalContracts = {
+export const externalContracts = {
   84532: {
     ContentFactory: {
-      address: "0x31A4c9b78422295d4c44b2E30783d3e26E1D5771",
+      address: "0xef975559d5d55ef7a7D0BB442059e9caB4755BdD",
       abi: [
         {
           inputs: [
@@ -34,6 +34,11 @@ const externalContracts = {
               internalType: "uint24",
               name: "_defaultFee",
               type: "uint24",
+            },
+            {
+              internalType: "address",
+              name: "_WETH_ADDRESS",
+              type: "address",
             },
           ],
           stateMutability: "nonpayable",
@@ -192,6 +197,19 @@ const externalContracts = {
         },
         {
           inputs: [],
+          name: "WETH_ADDRESS",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
           name: "contentTokenImplementation",
           outputs: [
             {
@@ -226,11 +244,6 @@ const externalContracts = {
                   internalType: "address",
                   name: "creator",
                   type: "address",
-                },
-                {
-                  internalType: "uint64",
-                  name: "vestingDuration",
-                  type: "uint64",
                 },
                 {
                   internalType: "address",
@@ -581,6 +594,19 @@ const externalContracts = {
           type: "function",
         },
         {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_newWETH",
+              type: "address",
+            },
+          ],
+          name: "setWETHAddress",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "stablecoinAddress",
           outputs: [
@@ -596,7 +622,7 @@ const externalContracts = {
       ],
     },
     ContentToken: {
-      address: "0x8552f3d5F8B9401D09b1376fACB29A3B5a6A23B2",
+      address: "0xc1a373dd12B50dA62B9878Eea017268CE3A8Ef28",
       abi: [
         {
           inputs: [],
@@ -651,13 +677,50 @@ const externalContracts = {
           anonymous: false,
           inputs: [
             {
+              indexed: true,
+              internalType: "address",
+              name: "by",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "rewardToken",
+              type: "address",
+            },
+            {
               indexed: false,
               internalType: "uint256",
               name: "amount",
               type: "uint256",
             },
           ],
-          name: "CreatorTokensWithdrawn",
+          name: "RewardClaimed",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "by",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "rewardToken",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "RewardDeposited",
           type: "event",
         },
         {
@@ -813,6 +876,38 @@ const externalContracts = {
           type: "function",
         },
         {
+          inputs: [],
+          name: "WETH_ADDRESS",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "accruedRewards",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
           inputs: [
             {
               internalType: "address",
@@ -911,6 +1006,24 @@ const externalContracts = {
           type: "function",
         },
         {
+          inputs: [
+            {
+              internalType: "address",
+              name: "rewardTokenAddress",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amountToClaim",
+              type: "uint256",
+            },
+          ],
+          name: "claimRewards",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "contentCreator",
           outputs: [
@@ -971,6 +1084,24 @@ const externalContracts = {
             },
           ],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "rewardToken",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "depositReward",
+          outputs: [],
+          stateMutability: "payable",
           type: "function",
         },
         {
@@ -1102,19 +1233,6 @@ const externalContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "initialCreatorAllocation",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "string",
@@ -1138,18 +1256,36 @@ const externalContracts = {
             },
             {
               internalType: "address",
-              name: "creator",
+              name: "creatorAddress",
               type: "address",
             },
             {
-              internalType: "uint64",
-              name: "vestingDurationSecs",
-              type: "uint64",
+              internalType: "address",
+              name: "_WETH_ADDRESS",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_liquidityManagerAddress",
+              type: "address",
             },
           ],
           name: "initialize",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "liquidityManagerAddress",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -1337,43 +1473,10 @@ const externalContracts = {
           stateMutability: "nonpayable",
           type: "function",
         },
-        {
-          inputs: [],
-          name: "vestingEndTime",
-          outputs: [
-            {
-              internalType: "uint64",
-              name: "",
-              type: "uint64",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "withdrawVestedTokens",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "withdrawnAmount",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
       ],
     },
     ReferralSystem: {
-      address: "0xF66626650745711276FA56D6FD21139E74721bDE",
+      address: "0x3C6b33d959821a8ac0DF3E70F8eceF14a6BB12fc",
       abi: [
         {
           inputs: [
@@ -2042,7 +2145,7 @@ const externalContracts = {
       ],
     },
     LiquidityManager: {
-      address: "0xCC4C6076b5FDdC0dE71Cf548B310A351dbcEDcfC",
+      address: "0x44AA4dDAe48fd79671dc49f00A985f4e126582C3",
       abi: [
         {
           inputs: [
@@ -2268,29 +2371,11 @@ const externalContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "tokenIn",
+              name: "handler",
               type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "tokenOut",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amountIn",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amountOut",
-              type: "uint256",
             },
           ],
-          name: "SwapExecuted",
+          name: "SwapHandlerSet",
           type: "event",
         },
         {
@@ -2444,6 +2529,43 @@ const externalContracts = {
           type: "function",
         },
         {
+          inputs: [],
+          name: "contentFactoryAddress",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "contentTokenRegistry",
+          outputs: [
+            {
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "tokenAddress",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
           inputs: [
             {
               internalType: "address",
@@ -2525,6 +2647,35 @@ const externalContracts = {
             {
               internalType: "address",
               name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "tokenAddress",
+              type: "address",
+            },
+          ],
+          name: "getContentTokenInfo",
+          outputs: [
+            {
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              internalType: "bool",
+              name: "isInitialMarket",
+              type: "bool",
+            },
+            {
+              internalType: "address",
+              name: "pool",
               type: "address",
             },
           ],
@@ -2763,6 +2914,24 @@ const externalContracts = {
         {
           inputs: [
             {
+              internalType: "address",
+              name: "tokenAddr",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "creatorAddr",
+              type: "address",
+            },
+          ],
+          name: "registerContentToken",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "bytes32",
               name: "role",
               type: "bytes32",
@@ -2799,62 +2968,40 @@ const externalContracts = {
         {
           inputs: [
             {
-              components: [
-                {
-                  internalType: "address",
-                  name: "tokenIn",
-                  type: "address",
-                },
-                {
-                  internalType: "address",
-                  name: "tokenOut",
-                  type: "address",
-                },
-                {
-                  internalType: "uint24",
-                  name: "fee",
-                  type: "uint24",
-                },
-                {
-                  internalType: "address",
-                  name: "recipient",
-                  type: "address",
-                },
-                {
-                  internalType: "uint256",
-                  name: "amountIn",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "amountOutMinimum",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint160",
-                  name: "sqrtPriceLimitX96",
-                  type: "uint160",
-                },
-                {
-                  internalType: "uint256",
-                  name: "deadline",
-                  type: "uint256",
-                },
-              ],
-              internalType: "struct LiquidityManager.SwapParams",
-              name: "params",
-              type: "tuple",
+              internalType: "address",
+              name: "_newFactoryAddress",
+              type: "address",
             },
           ],
-          name: "swap",
+          name: "setContentFactoryAddress",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_swapHandlerAddress",
+              type: "address",
+            },
+          ],
+          name: "setSwapHandlerAddress",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "swapHandlerAddress",
           outputs: [
             {
-              internalType: "uint256",
-              name: "amountOut",
-              type: "uint256",
+              internalType: "address",
+              name: "",
+              type: "address",
             },
           ],
-          stateMutability: "payable",
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -2924,6 +3071,439 @@ const externalContracts = {
           name: "transferPosition",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
+      ],
+    },
+    SwapHandler: {
+      address: "0x3876c57dBCDaCfE288d6D5f875268c916C7b0c3f",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_swapRouter",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_WETH9",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_admin",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "contentToken",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "rewardToken",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "RewardPaid",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "previousAdminRole",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "newAdminRole",
+              type: "bytes32",
+            },
+          ],
+          name: "RoleAdminChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+          ],
+          name: "RoleGranted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+          ],
+          name: "RoleRevoked",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "tokenIn",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "tokenOut",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amountInSwapped",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amountOutReceived",
+              type: "uint256",
+            },
+          ],
+          name: "SwapExecuted",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "DEFAULT_ADMIN_ROLE",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "WETH9",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+          ],
+          name: "getRoleAdmin",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+          ],
+          name: "getRoleMember",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+          ],
+          name: "getRoleMemberCount",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "grantRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "hasRole",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "liquidityManager",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "renounceRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "revokeRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_liquidityManager",
+              type: "address",
+            },
+          ],
+          name: "setLiquidityManager",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "tokenIn",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "tokenOut",
+                  type: "address",
+                },
+                {
+                  internalType: "uint24",
+                  name: "fee",
+                  type: "uint24",
+                },
+                {
+                  internalType: "address",
+                  name: "recipient",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amountIn",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amountOutMinimum",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint160",
+                  name: "sqrtPriceLimitX96",
+                  type: "uint160",
+                },
+                {
+                  internalType: "uint256",
+                  name: "deadline",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct ISwapHandler.SwapParams",
+              name: "params",
+              type: "tuple",
+            },
+          ],
+          name: "swap",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "amountOutForUser",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "swapRouter",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
