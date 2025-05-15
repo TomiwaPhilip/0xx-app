@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache"
 import mongoose from "mongoose"
 import type { Project as ProjectType } from "@/lib/types"
 import { serializeDocument } from "@/lib/mongoose/utils"
+import { createContentToken, getContentTokenDetails } from "@/lib/content"
+import type { ContentTokenInfo } from "@/lib/content"
 
 export async function getProjects(): Promise<ProjectType[]> {
   try {
@@ -139,18 +141,51 @@ export async function createProject(projectData: {
   percentChange: number
   category: string
   creatorId: string
+  initialSupply?: string
+  contentURI?: string
 }): Promise<string | null> {
   try {
     const user = await getUser()
     if (!user) throw new Error("User not authenticated")
     if (user.userType !== "business") throw new Error("Only business users can create projects")
+    if (!user.walletAddress) throw new Error("Wallet address required to create a collection")
 
     await dbConnect()
+
+    // Create content token if initialSupply is specified
+    let tokenAddress: string | undefined
+    let tokenSymbol: string | undefined
+
+    if (projectData.initialSupply) {
+      try {
+        // Create the content token
+        tokenAddress = await createContentToken(
+          projectData.name,
+          projectData.name.replace(/[^A-Z0-9]/gi, "").substring(0, 5).toUpperCase(),
+          projectData.contentURI || projectData.imageUrl, // Use imageUrl as fallback if contentURI not provided
+          BigInt(projectData.initialSupply),
+          user.walletAddress as `0x${string}`
+        )
+
+        if (!tokenAddress) {
+          throw new Error("Failed to create content token")
+        }
+
+        tokenSymbol = projectData.name.replace(/[^A-Z0-9]/gi, "").substring(0, 5).toUpperCase()
+      } catch (error) {
+        console.error("Error creating content token:", error)
+        throw new Error("Failed to create content token")
+      }
+    }
 
     const newProject = new Project({
       ...projectData,
       supportable: true,
       comments: [],
+      // Add token information if created
+      tokenAddress,
+      tokenSymbol,
+      initialSupply: projectData.initialSupply,
     })
 
     const savedProject = await newProject.save()
@@ -166,6 +201,36 @@ export async function createProject(projectData: {
     return projectId
   } catch (error) {
     console.error("Failed to create project:", error)
+    return null
+  }
+}
+
+// Add function to get project with token details
+export async function getProjectWithTokenDetails(id: string): Promise<ProjectType | null> {
+  try {
+    await dbConnect()
+    const project = await Project.findById(id)
+    if (!project) return null
+
+    // If project has a token, fetch latest token data
+    if (project.tokenAddress) {
+      try {
+        const tokenInfo = await getContentTokenDetails(project.tokenAddress as `0x${string}`)
+        
+        // Update project with latest token data
+        project.currentSupply = tokenInfo.totalSupply.toString()
+        project.tokenPrice = tokenInfo.price || "0"
+        
+        await project.save()
+      } catch (error) {
+        console.error("Error fetching token details:", error)
+        // Continue with existing project data if token fetch fails
+      }
+    }
+
+    return serializeDocument<ProjectType>(project)
+  } catch (error) {
+    console.error("Failed to fetch project:", error)
     return null
   }
 }

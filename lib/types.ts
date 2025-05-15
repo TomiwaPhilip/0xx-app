@@ -11,9 +11,16 @@ export interface Project {
   organization?: string
   marketCap?: number
   creatorId: string
-  comments?: Comment[]
+  comments: Comment[]
   createdAt: Date
   updatedAt: Date
+  tokenAddress?: string
+  tokenSymbol?: string
+  initialSupply?: string
+  currentSupply?: string
+  tokenPrice?: string
+  contentURI?: string
+  poolAddress?: string
 }
 
 export interface User {

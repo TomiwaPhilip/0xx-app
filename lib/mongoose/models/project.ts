@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document } from "mongoose"
+import type { Project as ProjectType } from "@/lib/types"
 
 export interface IComment {
   _id: string
@@ -11,12 +12,14 @@ export interface IComment {
 
 const CommentSchema: Schema = new Schema(
   {
+    _id: { type: String, required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     userName: { type: String, required: true },
     userImage: { type: String },
     text: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
   },
-  { timestamps: true },
+  { _id: false }
 )
 
 export interface IProject extends Document {
@@ -50,11 +53,19 @@ const ProjectSchema: Schema = new Schema(
     marketCap: { type: Number },
     creatorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     comments: [CommentSchema],
+    // Token-related fields
+    tokenAddress: { type: String },
+    tokenSymbol: { type: String },
+    initialSupply: { type: String },
+    currentSupply: { type: String },
+    tokenPrice: { type: String },
+    contentURI: { type: String },
+    poolAddress: { type: String },
   },
   { timestamps: true },
 )
 
 // Check if the model already exists to prevent overwriting during hot reloads
-const Project = mongoose.models.Project || mongoose.model<IProject>("Project", ProjectSchema)
+const Project = mongoose.models.Project || mongoose.model<ProjectType>("Project", ProjectSchema)
 
 export default Project
