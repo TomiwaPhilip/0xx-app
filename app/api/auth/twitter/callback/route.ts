@@ -41,12 +41,16 @@ export async function GET(request: Request) {
     }
 
     // Update user with Twitter data and set userType to business
-    await User.findByIdAndUpdate(user._id, {
-      userType: 'business', // Set user type to business
-      twitterHandle: twitterUser.username,
-      twitterFollowers: twitterUser.followerCount,
-      name: twitterUser.name || undefined,
-    });
+    await User.findOneAndUpdate(
+      { privyId: privyUserId },
+      {
+        userType: 'business', // Set user type to business
+        twitterHandle: twitterUser.username,
+        twitterFollowers: twitterUser.followerCount,
+        name: twitterUser.name || undefined,
+      },
+      { new: true }
+    );
 
     // Store tokens securely
     const cookieStore = await cookies();
