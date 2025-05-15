@@ -2,19 +2,18 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongoose/db';
 import User from '@/lib/mongoose/models/user';
+import { getPrivyUserFromCookie } from '@/lib/privy-server';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('user_id')?.value;
-    const twitterAccessToken = cookieStore.get('twitter_access_token')?.value;
-
-    if (!userId || !twitterAccessToken) {
+    // Get user from Privy
+    const privyUser = await getPrivyUserFromCookie();
+    if (!privyUser) {
       return NextResponse.json({ connected: false });
     }
 
     await dbConnect();
-    const user = await User.findById(userId);
+    const user = await User.findOne({ privyId: privyUser.id });
 
     if (!user?.twitterHandle) {
       return NextResponse.json({ connected: false });
