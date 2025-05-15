@@ -43,10 +43,9 @@ export default function UpgradeForm({ userId }: { userId: string }) {
       const data = await response.json()
       
       if (data.twitterHandle) {
-        const followerCount = await verifyTwitterFollowers(data.twitterHandle)
         setTwitterHandle(data.twitterHandle)
         
-        if (followerCount >= 1) { // Changed from 10000 to 1 as per requirement
+        if (data.twitterFollowers >= 1) { // Changed from 10000 to 1 as per requirement
           setStep(2)
           toast({
             title: "Success",
@@ -55,7 +54,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
         } else {
           toast({
             title: "Requirements Not Met",
-            description: `You need at least 1 follower to upgrade. Current count: ${followerCount}`,
+            description: `You need at least 1 follower to upgrade. Current count: ${data.twitterFollowers}`,
             variant: "destructive",
           })
         }
