@@ -11,11 +11,22 @@ import type { Project as ProjectType } from "@/lib/types"
 import { serializeDocument } from "@/lib/mongoose/utils"
 import { createContentToken, getContentTokenDetails } from "@/lib/content"
 import type { ContentTokenInfo } from "@/lib/content"
+import { createCollection, getCollectionMetadata } from "@/lib/services/collection-service"
+import { buyTokens } from "@/lib/services/trading-service"
+import { updateProjectMarketData } from "@/lib/services/market-service"
 
 export async function getProjects(): Promise<ProjectType[]> {
   try {
     await dbConnect()
     const projects = await Project.find().sort({ createdAt: -1 })
+    
+    // Update market data for all projects with tokens
+    await Promise.all(
+      projects.map(async (project) => {
+        await updateProjectMarketData(project)
+      })
+    )
+    
     return serializeDocument<ProjectType[]>(projects)
   } catch (error) {
     console.error("Failed to fetch projects:", error)
@@ -28,6 +39,10 @@ export async function getProjectById(id: string): Promise<ProjectType | null> {
     await dbConnect()
     const project = await Project.findById(id)
     if (!project) return null
+
+    // Update market data if project has a token
+    await updateProjectMarketData(project)
+    
     return serializeDocument<ProjectType>(project)
   } catch (error) {
     console.error("Failed to fetch project:", error)
@@ -67,38 +82,63 @@ export async function supportProject(projectId: string): Promise<boolean> {
   try {
     const user = await getUser()
     if (!user) throw new Error("User not authenticated")
+    if (!user.walletAddress) throw new Error("Wallet address required to support projects")
 
     await dbConnect()
 
     // Get the project
     const project = await Project.findById(projectId)
     if (!project) throw new Error("Project not found")
+    if (!project.tokenAddress) throw new Error("Project has no token")
 
-    // Update user's supported projects
-    await User.findByIdAndUpdate(user._id, {
-      $addToSet: { supportedProjects: projectId },
-    })
+    // Calculate token amount to buy (for now, fixed amount)
+    const amount = BigInt(1e18) // 1 token
+    const minReceived = BigInt(0) // Accept any amount for now
 
-    // Update project creator's supports received count
-    await User.findByIdAndUpdate(project.creatorId, {
-      $inc: { supportsReceived: 1 },
-    })
+    try {
+      // Buy tokens using trading service
+      const result = await buyTokens({
+        tokenAddress: project.tokenAddress,
+        amount,
+        minReceived,
+        account: user.walletAddress as `0x${string}`,
+      })
 
-    // Add transaction record
-    const transaction = new Transaction({
-      projectId,
-      userId: user._id,
-      userName: user.name || "Anonymous",
-      action: "bought",
-      price: project.price,
-    })
+      if (!result.hash) {
+        throw new Error("Transaction failed")
+      }
 
-    await transaction.save()
+      // Update user's supported projects
+      await User.findByIdAndUpdate(user._id, {
+        $addToSet: { supportedProjects: projectId },
+      })
 
-    revalidatePath("/")
-    revalidatePath(`/projects/${projectId}`)
-    revalidatePath(`/profile/${project.creatorId}`)
-    return true
+      // Update project creator's supports received count
+      await User.findByIdAndUpdate(project.creatorId, {
+        $inc: { supportsReceived: 1 },
+      })
+
+      // Add transaction record
+      const transaction = new Transaction({
+        projectId,
+        userId: user._id,
+        userName: user.name || "Anonymous",
+        action: "bought",
+        price: project.price,
+        tokenAmount: amount.toString(),
+        transactionHash: result.hash,
+      })
+
+      await transaction.save()
+
+      revalidatePath("/")
+      revalidatePath(`/projects/${projectId}`)
+      revalidatePath(`/profile/${project.creatorId}`)
+      return true
+    } catch (error) {
+      console.error("Error buying tokens:", error)
+      throw error
+    }
   } catch (error) {
     console.error("Failed to support project:", error)
     return false
@@ -158,20 +198,22 @@ export async function createProject(projectData: {
 
     if (projectData.initialSupply) {
       try {
-        // Create the content token
-        tokenAddress = await createContentToken(
-          projectData.name,
-          projectData.name.replace(/[^A-Z0-9]/gi, "").substring(0, 5).toUpperCase(),
-          projectData.contentURI || projectData.imageUrl, // Use imageUrl as fallback if contentURI not provided
-          BigInt(projectData.initialSupply),
-          user.walletAddress as `0x${string}`
-        )
+        const symbol = projectData.name.replace(/[^A-Z0-9]/gi, "").substring(0, 5).toUpperCase()
+        
+        // Create the collection using collection service
+        tokenAddress = await createCollection({
+          name: projectData.name,
+          symbol,
+          contentURI: projectData.contentURI || projectData.imageUrl,
+          initialSupply: BigInt(projectData.initialSupply),
+          creatorAddress: user.walletAddress as `0x${string}`
+        })
 
         if (!tokenAddress) {
           throw new Error("Failed to create content token")
         }
 
-        tokenSymbol = projectData.name.replace(/[^A-Z0-9]/gi, "").substring(0, 5).toUpperCase()
+        tokenSymbol = symbol
       } catch (error) {
         console.error("Error creating content token:", error)
         throw new Error("Failed to create content token")
@@ -198,6 +240,7 @@ export async function createProject(projectData: {
 
     revalidatePath("/")
     revalidatePath(`/profile/${user._id}`)
+
     return projectId
   } catch (error) {
     console.error("Failed to create project:", error)
@@ -205,26 +248,20 @@ export async function createProject(projectData: {
   }
 }
 
-// Add function to get project with token details
 export async function getProjectWithTokenDetails(id: string): Promise<ProjectType | null> {
   try {
     await dbConnect()
     const project = await Project.findById(id)
     if (!project) return null
 
-    // If project has a token, fetch latest token data
+    // If project has a token, get its metadata
     if (project.tokenAddress) {
       try {
-        const tokenInfo = await getContentTokenDetails(project.tokenAddress as `0x${string}`)
-        
-        // Update project with latest token data
+        const tokenInfo = await getCollectionMetadata(project.tokenAddress)
         project.currentSupply = tokenInfo.totalSupply.toString()
-        project.tokenPrice = tokenInfo.price || "0"
-        
-        await project.save()
+        project.tokenPrice = tokenInfo.price?.toString() || "0"
       } catch (error) {
         console.error("Error fetching token details:", error)
-        // Continue with existing project data if token fetch fails
       }
     }
 

@@ -13,13 +13,12 @@ export function serializeDocument<T>(doc: any): T {
     return doc.map((item) => serializeDocument(item)) as T
   }
 
-  if (doc.toObject) {
-    doc = doc.toObject()
-  }
+  // Convert to plain object if it's a Mongoose document
+  const plainDoc = doc.toObject ? doc.toObject() : doc
 
   const serialized: any = {}
 
-  for (const [key, value] of Object.entries(doc)) {
+  for (const [key, value] of Object.entries(plainDoc)) {
     if (value instanceof Types.ObjectId) {
       serialized[key] = value.toString()
     } else if (value instanceof Date) {
@@ -29,11 +28,21 @@ export function serializeDocument<T>(doc: any): T {
     } else if (Array.isArray(value)) {
       serialized[key] = value.map((item) => serializeDocument(item))
     } else if (value && typeof value === 'object') {
-      serialized[key] = serializeDocument(value)
+      // Type guard for BSON objects
+      if ('_bsontype' in value && value._bsontype === 'ObjectID') {
+        serialized[key] = value.toString()
+      } else {
+        serialized[key] = serializeDocument(value)
+      }
     } else {
       serialized[key] = value
     }
   }
+
+  // Remove Mongoose-specific fields
+  delete serialized.__v
+  delete serialized.$init
+  delete serialized.$isNew
 
   return serialized as T
 } 

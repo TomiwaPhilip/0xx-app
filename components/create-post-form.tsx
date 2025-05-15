@@ -92,6 +92,8 @@ export default function CreatePostForm({ userId, user, linkWallet }: { userId: s
         percentChange: 0,
         category,
         creatorId: userId,
+        initialSupply: "1000000000", // 1 Billion tokens
+        contentURI: imageUrl, // Using the image URL as content URI
       })
 
       toast({

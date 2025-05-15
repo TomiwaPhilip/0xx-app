@@ -53,6 +53,16 @@ export default function ProjectCard({ project }: { project: Project }) {
                 $ {project.marketCap.toFixed(3)} <span className="ml-4">Market cap</span>
               </p>
             )}
+            {project.tokenSymbol && (
+              <p className="text-gray-600">
+                Token: {project.tokenSymbol}
+                {project.tokenAddress && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    ({project.tokenAddress.slice(0, 6)}...{project.tokenAddress.slice(-4)})
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
