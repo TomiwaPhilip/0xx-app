@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { upgradeToBusinessUser } from "@/lib/actions/user-actions"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
-import { usePrivy } from "@privy-io/react-auth"
 import { X } from "lucide-react"
 import { verifyTwitterFollowers } from "@/lib/actions/twitter-actions"
 
@@ -22,65 +20,50 @@ export default function UpgradeForm({ userId }: { userId: string }) {
   const [step, setStep] = useState(1)
   const { toast } = useToast()
   const router = useRouter()
-  const { linkTwitter, user } = usePrivy()
 
   const handleTwitterConnect = async () => {
     try {
       setIsVerifying(true)
-      linkTwitter()
-
-      // Wait for Twitter connection to be established
-      const checkTwitterConnection = async () => {
-        if (user?.twitter?.username) {
-          const followerCount = await verifyTwitterFollowers(user.twitter.username)
-          
-          if (followerCount >= 10000) {
-            setTwitterHandle(user.twitter.username)
-            setStep(2)
-            toast({
-              title: "Success",
-              description: "X account connected successfully!",
-            })
-          } else {
-            toast({
-              title: "Requirements Not Met",
-              description: `You need at least 10,000 followers to upgrade. Current count: ${followerCount.toLocaleString()}`,
-              variant: "destructive",
-            })
-          }
-        } else {
-          // Retry after a short delay
-          setTimeout(checkTwitterConnection, 1000)
-        }
-      }
-
-      await checkTwitterConnection()
+      // Redirect to Twitter auth endpoint
+      window.location.href = '/api/auth/twitter'
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to connect X account. Please try again.",
         variant: "destructive",
       })
-    } finally {
       setIsVerifying(false)
     }
   }
 
   useEffect(() => {
-    // If user has Twitter connected, verify followers and pre-fill the handle
-    const verifyExistingTwitter = async () => {
-      console.log("user:", user)
-      if (user?.twitter?.username && step === 1) {
-        const followerCount = await verifyTwitterFollowers(user.twitter.username)
-        if (followerCount >= 0) {
-          setTwitterHandle(user.twitter.username)
+    // Check if we have a twitter_access_token cookie
+    const checkTwitterConnection = async () => {
+      const response = await fetch('/api/auth/twitter/verify')
+      const data = await response.json()
+      
+      if (data.twitterHandle) {
+        const followerCount = await verifyTwitterFollowers(data.twitterHandle)
+        setTwitterHandle(data.twitterHandle)
+        
+        if (followerCount >= 1) { // Changed from 10000 to 1 as per requirement
           setStep(2)
+          toast({
+            title: "Success",
+            description: "X account connected successfully!",
+          })
+        } else {
+          toast({
+            title: "Requirements Not Met",
+            description: `You need at least 1 follower to upgrade. Current count: ${followerCount}`,
+            variant: "destructive",
+          })
         }
       }
     }
 
-    verifyExistingTwitter()
-  }, [user, user?.twitter?.username, step])
+    checkTwitterConnection()
+  }, [toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,10 +83,10 @@ export default function UpgradeForm({ userId }: { userId: string }) {
       // Verify follower count one last time before upgrade
       const followerCount = await verifyTwitterFollowers(twitterHandle)
       
-      if (followerCount < 10000) {
+      if (followerCount < 1) { // Changed from 10000 to 1
         toast({
           title: "Requirements Not Met",
-          description: "You need at least 10,000 X followers to upgrade to a Community Account.",
+          description: "You need at least 1 X follower to upgrade to a Community Account.",
           variant: "destructive",
         })
         return
@@ -143,22 +126,26 @@ export default function UpgradeForm({ userId }: { userId: string }) {
             <h2 className="text-lg font-semibold mb-2">Requirements</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>Connect your X account</li>
-              <li>Have at least 10,000 followers</li>
+              <li>Have at least 1 follower</li>
               <li>Complete your profile information</li>
             </ul>
           </div>
 
           <div className="text-center">
-            <Button onClick={handleTwitterConnect} className="bg-black hover:bg-zinc-800 text-white py-6 px-8">
+            <Button 
+              onClick={handleTwitterConnect} 
+              className="bg-black hover:bg-zinc-800 text-white py-6 px-8"
+              disabled={isVerifying}
+            >
               <X className="mr-2 h-5 w-5" />
-              Connect X Account
+              {isVerifying ? "Connecting..." : "Connect X Account"}
             </Button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="twitterHandle">Twitter Handle</Label>
+            <Label htmlFor="twitterHandle">X Handle</Label>
             <div className="flex">
               <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
                 @
@@ -166,9 +153,8 @@ export default function UpgradeForm({ userId }: { userId: string }) {
               <Input
                 id="twitterHandle"
                 value={twitterHandle}
-                onChange={(e) => setTwitterHandle(e.target.value)}
-                className="rounded-l-none"
-                placeholder="username"
+                readOnly
+                className="rounded-l-none bg-gray-50"
               />
             </div>
           </div>
@@ -184,7 +170,11 @@ export default function UpgradeForm({ userId }: { userId: string }) {
             />
           </div>
 
-          <Button type="submit" className="w-full py-6 bg-black text-white hover:bg-gray-800" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            className="w-full py-6 bg-black text-white hover:bg-gray-800" 
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Processing..." : "Complete Upgrade"}
           </Button>
         </form>
