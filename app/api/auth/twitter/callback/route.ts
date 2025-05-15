@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getTwitterTokens, getTwitterUserData } from '@/lib/twitter-auth';
 import dbConnect from '@/lib/mongoose/db';
 import User from '@/lib/mongoose/models/user';
+import { getPrivyUserFromCookie } from '@/lib/privy-server';
 
 export async function GET(request: Request) {
   try {
@@ -11,6 +12,12 @@ export async function GET(request: Request) {
 
     if (!code) {
       return NextResponse.redirect(new URL('/auth/error?error=no_code', request.url));
+    }
+
+    // Get Privy user first
+    const privyUser = await getPrivyUserFromCookie();
+    if (!privyUser) {
+      return NextResponse.redirect(new URL('/auth/error?error=not_authenticated', request.url));
     }
 
     // Exchange code for tokens
@@ -24,24 +31,23 @@ export async function GET(request: Request) {
     // Get user data from Twitter
     const twitterUser = await getTwitterUserData(accessToken);
 
-    // Get user ID from session/cookie
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('user_id')?.value;
-
-    if (!userId) {
-      return NextResponse.redirect(new URL('/auth/error?error=no_user', request.url));
-    }
-
     await dbConnect();
 
+    // Find user by Privy ID
+    const user = await User.findOne({ privyId: privyUser.id });
+    if (!user) {
+      return NextResponse.redirect(new URL('/auth/error?error=user_not_found', request.url));
+    }
+
     // Update user with Twitter data
-    await User.findByIdAndUpdate(userId, {
+    await User.findByIdAndUpdate(user._id, {
       twitterHandle: twitterUser.username,
       twitterFollowers: twitterUser.followerCount,
       name: twitterUser.name || undefined,
     });
 
     // Store tokens securely
+    const cookieStore = await cookies();
     cookieStore.set('twitter_access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
