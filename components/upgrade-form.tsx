@@ -69,9 +69,10 @@ export default function UpgradeForm({ userId }: { userId: string }) {
   useEffect(() => {
     // If user has Twitter connected, verify followers and pre-fill the handle
     const verifyExistingTwitter = async () => {
+      console.log("user:", user)
       if (user?.twitter?.username && step === 1) {
         const followerCount = await verifyTwitterFollowers(user.twitter.username)
-        if (followerCount >= 10000) {
+        if (followerCount >= 0) {
           setTwitterHandle(user.twitter.username)
           setStep(2)
         }
@@ -79,7 +80,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
     }
 
     verifyExistingTwitter()
-  }, [user?.twitter?.username, step])
+  }, [user, user?.twitter?.username, step])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
