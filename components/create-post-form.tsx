@@ -80,6 +80,12 @@ export default function CreatePostForm({ userId, user, linkWallet }: { userId: s
     try {
       setIsSubmitting(true)
 
+      // Get wallet address from Privy user object
+      const walletAddress = user?.wallet?.address
+      if (!walletAddress) {
+        throw new Error("No wallet address found")
+      }
+
       // In a real app, you would upload the image to a storage service
       // and get back a URL. For this example, we'll use a placeholder.
       const imageUrl = "/images/placeholder-post.png"

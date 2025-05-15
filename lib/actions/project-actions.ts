@@ -14,6 +14,7 @@ import type { ContentTokenInfo } from "@/lib/content"
 import { createCollection, getCollectionMetadata } from "@/lib/services/collection-service"
 import { buyTokens } from "@/lib/services/trading-service"
 import { updateProjectMarketData } from "@/lib/services/market-service"
+import { getPrivyUserFromCookie } from "@/lib/privy-server"
 
 export async function getProjects(): Promise<ProjectType[]> {
   try {
@@ -188,7 +189,10 @@ export async function createProject(projectData: {
     const user = await getUser()
     if (!user) throw new Error("User not authenticated")
     if (user.userType !== "business") throw new Error("Only business users can create projects")
-    if (!user.walletAddress) throw new Error("Wallet address required to create a collection")
+
+    // Get Privy user to ensure we have the latest wallet address
+    const privyUser = await getPrivyUserFromCookie()
+    if (!privyUser?.wallet?.address) throw new Error("Wallet address required to create a collection")
 
     await dbConnect()
 
@@ -206,7 +210,7 @@ export async function createProject(projectData: {
           symbol,
           contentURI: projectData.contentURI || projectData.imageUrl,
           initialSupply: BigInt(projectData.initialSupply),
-          creatorAddress: user.walletAddress as `0x${string}`
+          creatorAddress: privyUser.wallet.address as `0x${string}`
         })
 
         if (!tokenAddress) {
