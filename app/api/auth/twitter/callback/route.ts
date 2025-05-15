@@ -15,8 +15,9 @@ export async function GET(request: Request) {
     }
 
     // Get Privy user first
-    const privyUser = await getPrivyUserFromCookie();
-    if (!privyUser) {
+    const privyUser = await cookies();
+    const privyUserId = privyUser.get('privy_user_id');
+    if (!privyUserId) {
       return NextResponse.redirect(new URL('/auth/error?error=not_authenticated', request.url));
     }
 
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
     await dbConnect();
 
     // Find user by Privy ID
-    const user = await User.findOne({ privyId: privyUser.id });
+    const user = await User.findOne({ privyId: privyUserId });
     if (!user) {
       return NextResponse.redirect(new URL('/auth/error?error=user_not_found', request.url));
     }
