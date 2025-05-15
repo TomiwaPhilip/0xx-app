@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { PrivyProvider } from "@privy-io/react-auth"
-import { base } from "viem/chains"
+import { baseSepolia } from "viem/chains"
 
 export default function PrivyAppProvider({ children }: { children: ReactNode }) {
   return (
@@ -18,8 +18,8 @@ export default function PrivyAppProvider({ children }: { children: ReactNode }) 
         embeddedWallets: {
           createOnLogin: "off",
         },
-        defaultChain: base,
-        supportedChains: [base],
+        defaultChain: baseSepolia,
+        supportedChains: [baseSepolia],
       }}
     >
       {children}
