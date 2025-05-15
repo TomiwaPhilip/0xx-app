@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { oauth2Client, getTwitterUserData } from '@/lib/twitter-auth';
+import { getTwitterTokens, getTwitterUserData } from '@/lib/twitter-auth';
 import dbConnect from '@/lib/mongoose/db';
 import User from '@/lib/mongoose/models/user';
 
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     // Exchange code for tokens
-    const { tokens } = await oauth2Client.getToken(code);
+    const tokens = await getTwitterTokens(code);
     const accessToken = tokens.access_token;
 
     if (!accessToken) {

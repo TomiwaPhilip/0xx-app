@@ -1,5 +1,3 @@
-import { OAuth2Client } from 'google-auth-library';
-
 // Twitter OAuth 2.0 configuration
 const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID || '';
 const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET || '';
@@ -7,30 +5,51 @@ const TWITTER_CALLBACK_URL = process.env.TWITTER_CALLBACK_URL || 'http://localho
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
 const TWITTER_TOKEN_URL = 'https://api.twitter.com/2/oauth2/token';
 
-export const oauth2Client = new OAuth2Client(
-  TWITTER_CLIENT_ID,
-  TWITTER_CLIENT_SECRET,
-  TWITTER_CALLBACK_URL
-);
-
 export function getTwitterAuthUrl() {
-  const scopes = [
-    'tweet.read',
-    'users.read',
-    'follows.read',
-  ];
-
-  return oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes.join(' '),
-    include_granted_scopes: true
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: TWITTER_CLIENT_ID,
+    redirect_uri: TWITTER_CALLBACK_URL,
+    scope: 'tweet.read users.read follows.read offline.access',
+    state: 'state',
+    code_challenge: 'challenge',
+    code_challenge_method: 'plain'
   });
+
+  return `${TWITTER_AUTH_URL}?${params.toString()}`;
+}
+
+export async function getTwitterTokens(code: string) {
+  const params = new URLSearchParams({
+    code,
+    grant_type: 'authorization_code',
+    client_id: TWITTER_CLIENT_ID,
+    redirect_uri: TWITTER_CALLBACK_URL,
+    code_verifier: 'challenge'
+  });
+
+  const basicAuth = Buffer.from(`${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`).toString('base64');
+
+  const response = await fetch(TWITTER_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${basicAuth}`
+    },
+    body: params.toString()
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get access token');
+  }
+
+  return response.json();
 }
 
 export async function getTwitterUserData(accessToken: string) {
   const response = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics', {
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${accessToken}`,
     },
   });
 
@@ -53,7 +72,7 @@ export async function verifyTwitterFollowers(username: string): Promise<number> 
       `https://api.twitter.com/2/users/by/username/${username}?user.fields=public_metrics`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+          'Authorization': `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
         },
       }
     );
