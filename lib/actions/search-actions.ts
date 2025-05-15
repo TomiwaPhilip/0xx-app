@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongoose/db"
 import Project from "@/lib/mongoose/models/project"
 import User from "@/lib/mongoose/models/user"
 import type { Project as ProjectType, User as UserType } from "@/lib/types"
+import { serializeDocument } from "@/lib/mongoose/utils"
 
 export async function searchProjects(query: string): Promise<ProjectType[]> {
   try {
@@ -28,10 +29,7 @@ export async function searchProjects(query: string): Promise<ProjectType[]> {
       .sort({ createdAt: -1 })
       .limit(20)
 
-    return projects.map((project) => ({
-      ...project.toObject(),
-      _id: project._id.toString(),
-    })) as ProjectType[]
+    return serializeDocument<ProjectType[]>(projects)
   } catch (error) {
     console.error("Failed to search projects:", error)
     return []
@@ -62,10 +60,7 @@ export async function searchUsers(query: string): Promise<UserType[]> {
       .sort({ supportsReceived: -1 })
       .limit(20)
 
-    return users.map((user) => ({
-      ...user.toObject(),
-      _id: user._id.toString(),
-    })) as UserType[]
+    return serializeDocument<UserType[]>(users)
   } catch (error) {
     console.error("Failed to search users:", error)
     return []

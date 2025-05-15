@@ -8,17 +8,13 @@ import { getUser } from "./user-actions"
 import { revalidatePath } from "next/cache"
 import mongoose from "mongoose"
 import type { Project as ProjectType } from "@/lib/types"
+import { serializeDocument } from "@/lib/mongoose/utils"
 
 export async function getProjects(): Promise<ProjectType[]> {
   try {
     await dbConnect()
-
     const projects = await Project.find().sort({ createdAt: -1 })
-
-    return projects.map((project) => ({
-      ...project.toObject(),
-      _id: project._id.toString(),
-    })) as ProjectType[]
+    return serializeDocument<ProjectType[]>(projects)
   } catch (error) {
     console.error("Failed to fetch projects:", error)
     return []
@@ -28,15 +24,9 @@ export async function getProjects(): Promise<ProjectType[]> {
 export async function getProjectById(id: string): Promise<ProjectType | null> {
   try {
     await dbConnect()
-
     const project = await Project.findById(id)
-
     if (!project) return null
-
-    return {
-      ...project.toObject(),
-      _id: project._id.toString(),
-    } as ProjectType
+    return serializeDocument<ProjectType>(project)
   } catch (error) {
     console.error("Failed to fetch project:", error)
     return null
@@ -46,13 +36,8 @@ export async function getProjectById(id: string): Promise<ProjectType | null> {
 export async function getProjectsByCreator(creatorId: string): Promise<ProjectType[]> {
   try {
     await dbConnect()
-
     const projects = await Project.find({ creatorId }).sort({ createdAt: -1 })
-
-    return projects.map((project) => ({
-      ...project.toObject(),
-      _id: project._id.toString(),
-    })) as ProjectType[]
+    return serializeDocument<ProjectType[]>(projects)
   } catch (error) {
     console.error("Failed to fetch creator projects:", error)
     return []
@@ -62,20 +47,14 @@ export async function getProjectsByCreator(creatorId: string): Promise<ProjectTy
 export async function getSupportedProjects(userId: string): Promise<ProjectType[]> {
   try {
     await dbConnect()
-
     const user = await User.findById(userId)
     if (!user || !user.supportedProjects || user.supportedProjects.length === 0) {
       return []
     }
-
     const projects = await Project.find({
       _id: { $in: user.supportedProjects },
     }).sort({ createdAt: -1 })
-
-    return projects.map((project) => ({
-      ...project.toObject(),
-      _id: project._id.toString(),
-    })) as ProjectType[]
+    return serializeDocument<ProjectType[]>(projects)
   } catch (error) {
     console.error("Failed to fetch supported projects:", error)
     return []

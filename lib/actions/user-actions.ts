@@ -5,6 +5,7 @@ import dbConnect from "@/lib/mongoose/db"
 import User from "@/lib/mongoose/models/user"
 import { revalidatePath } from "next/cache"
 import type { User as UserType } from "@/lib/types"
+import { serializeDocument } from "@/lib/mongoose/utils"
 
 export async function getUser(): Promise<UserType | null> {
   try {
@@ -34,10 +35,7 @@ export async function getUser(): Promise<UserType | null> {
       await user.save()
     }
 
-    return {
-      ...user.toObject(),
-      _id: user._id.toString(),
-    } as UserType
+    return serializeDocument<UserType>(user)
   } catch (error) {
     console.error("Failed to get user:", error)
     return null
@@ -47,15 +45,9 @@ export async function getUser(): Promise<UserType | null> {
 export async function getUserById(id: string): Promise<UserType | null> {
   try {
     await dbConnect()
-
     const user = await User.findById(id)
-
     if (!user) return null
-
-    return {
-      ...user.toObject(),
-      _id: user._id.toString(),
-    } as UserType
+    return serializeDocument<UserType>(user)
   } catch (error) {
     console.error("Failed to get user by ID:", error)
     return null

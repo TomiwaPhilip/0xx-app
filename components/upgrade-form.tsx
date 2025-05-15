@@ -11,7 +11,7 @@ import { upgradeToBusinessUser } from "@/lib/actions/user-actions"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { usePrivy } from "@privy-io/react-auth"
-import { Twitter } from "lucide-react"
+import { Twitter, X } from "lucide-react"
 
 export default function UpgradeForm({ userId }: { userId: string }) {
   const [twitterHandle, setTwitterHandle] = useState("")
@@ -24,7 +24,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
 
   const handleTwitterConnect = async () => {
     try {
-      await linkTwitter()
+      linkTwitter()
 
       // Check if Twitter was successfully linked
       if (user?.twitter?.username) {
@@ -118,16 +118,16 @@ export default function UpgradeForm({ userId }: { userId: string }) {
           <div className="bg-gray-50 p-4 rounded-lg">
             <h2 className="text-lg font-semibold mb-2">Requirements</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Connect your Twitter account</li>
-              <li>Have at least 10,000 Twitter followers</li>
+              <li>Connect your X account</li>
+              <li>Have at least 10,000 followers</li>
               <li>Complete your profile information</li>
             </ul>
           </div>
 
           <div className="text-center">
-            <Button onClick={handleTwitterConnect} className="bg-[#1DA1F2] hover:bg-[#1a94e0] text-white py-6 px-8">
-              <Twitter className="mr-2 h-5 w-5" />
-              Connect Twitter Account
+            <Button onClick={handleTwitterConnect} className="bg-black hover:bg-zinc-800 text-white py-6 px-8">
+              <X className="mr-2 h-5 w-5" />
+              Connect X Account
             </Button>
           </div>
         </div>

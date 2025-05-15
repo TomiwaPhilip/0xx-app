@@ -1,13 +1,13 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { getUserById } from "@/lib/actions/user-actions"
+import { getUser} from "@/lib/actions/user-actions"
 import { getProjectsByCreator, getSupportedProjects } from "@/lib/actions/project-actions"
 import ProfileHeader from "@/components/profile-header"
 import ProfileTabs from "@/components/profile-tabs"
 import Loading from "@/components/loading"
 
 export default async function ProfilePage({ params }: { params: { id: string } }) {
-  const user = await getUserById(params.id)
+  const user = await getUser()
 
   if (!user) {
     notFound()
