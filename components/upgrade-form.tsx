@@ -11,12 +11,14 @@ import { upgradeToBusinessUser } from "@/lib/actions/user-actions"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { usePrivy } from "@privy-io/react-auth"
-import { Twitter, X } from "lucide-react"
+import { X } from "lucide-react"
+import { verifyTwitterFollowers } from "@/lib/actions/twitter-actions"
 
 export default function UpgradeForm({ userId }: { userId: string }) {
   const [twitterHandle, setTwitterHandle] = useState("")
   const [bio, setBio] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
   const [step, setStep] = useState(1)
   const { toast } = useToast()
   const router = useRouter()
@@ -24,36 +26,59 @@ export default function UpgradeForm({ userId }: { userId: string }) {
 
   const handleTwitterConnect = async () => {
     try {
+      setIsVerifying(true)
       linkTwitter()
 
-      // Check if Twitter was successfully linked
-      if (user?.twitter?.username) {
-        setTwitterHandle(user.twitter.username)
-        setStep(2)
-      } else {
-        // Wait a moment and check again (Privy might need time to update)
-        setTimeout(() => {
-          if (user?.twitter?.username) {
+      // Wait for Twitter connection to be established
+      const checkTwitterConnection = async () => {
+        if (user?.twitter?.username) {
+          const followerCount = await verifyTwitterFollowers(user.twitter.username)
+          
+          if (followerCount >= 10000) {
             setTwitterHandle(user.twitter.username)
             setStep(2)
+            toast({
+              title: "Success",
+              description: "X account connected successfully!",
+            })
+          } else {
+            toast({
+              title: "Requirements Not Met",
+              description: `You need at least 10,000 followers to upgrade. Current count: ${followerCount.toLocaleString()}`,
+              variant: "destructive",
+            })
           }
-        }, 2000)
+        } else {
+          // Retry after a short delay
+          setTimeout(checkTwitterConnection, 1000)
+        }
       }
+
+      await checkTwitterConnection()
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to connect Twitter account. Please try again.",
+        description: "Failed to connect X account. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsVerifying(false)
     }
   }
 
   useEffect(() => {
-    // If user has Twitter connected, pre-fill the handle and move to step 2
-    if (user?.twitter?.username && step === 1) {
-      setTwitterHandle(user.twitter.username)
-      setStep(2)
+    // If user has Twitter connected, verify followers and pre-fill the handle
+    const verifyExistingTwitter = async () => {
+      if (user?.twitter?.username && step === 1) {
+        const followerCount = await verifyTwitterFollowers(user.twitter.username)
+        if (followerCount >= 10000) {
+          setTwitterHandle(user.twitter.username)
+          setStep(2)
+        }
+      }
     }
+
+    verifyExistingTwitter()
   }, [user?.twitter?.username, step])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +87,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
     if (!twitterHandle.trim()) {
       toast({
         title: "Error",
-        description: "Please enter your Twitter handle",
+        description: "Please connect your X account first",
         variant: "destructive",
       })
       return
@@ -70,25 +95,23 @@ export default function UpgradeForm({ userId }: { userId: string }) {
 
     try {
       setIsSubmitting(true)
-
-      // In a real app, you would verify Twitter followers here
-      // For this example, we'll simulate a check
-      const twitterFollowers = 15000 // Simulated follower count
-
-      if (twitterFollowers < 10000) {
+      
+      // Verify follower count one last time before upgrade
+      const followerCount = await verifyTwitterFollowers(twitterHandle)
+      
+      if (followerCount < 10000) {
         toast({
           title: "Requirements Not Met",
-          description: "You need at least 10,000 Twitter followers to upgrade to a Business account.",
+          description: "You need at least 10,000 X followers to upgrade to a Business account.",
           variant: "destructive",
         })
-        setIsSubmitting(false)
         return
       }
 
       await upgradeToBusinessUser({
         userId,
         twitterHandle,
-        twitterFollowers,
+        twitterFollowers: followerCount,
         bio,
       })
 
