@@ -69,7 +69,7 @@ export default function ProfileTabs({
               )
             ) : (
               <div className="text-center py-12">
-                <h3 className="text-xl font-semibold mb-2">Upgrade to Business Account</h3>
+                <h3 className="text-xl font-semibold mb-2">Upgrade to Community Account</h3>
                 <p className="text-gray-600 mb-4">Create your own posts and receive support from the community.</p>
                 <a
                   href="/profile/upgrade"

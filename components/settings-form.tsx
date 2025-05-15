@@ -350,7 +350,7 @@ export default function SettingsForm({ user }: { user: User }) {
 
               {user.userType === "normal" && (
                 <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold mb-2">Upgrade to Business Account</h3>
+                  <h3 className="font-semibold mb-2">Upgrade to Community Account</h3>
                   <p className="text-sm text-gray-600 mb-4">
                     Create your own posts and receive support from the community.
                   </p>

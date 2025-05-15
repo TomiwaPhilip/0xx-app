@@ -21,7 +21,7 @@ export default async function UpgradePage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="container mx-auto px-4 max-w-6xl">
-        <DetailHeader title="Upgrade to Business Account" />
+        <DetailHeader title="Upgrade to Community Account" />
         <Suspense fallback={<Loading />}>
           <UpgradeForm userId={user._id} />
         </Suspense>

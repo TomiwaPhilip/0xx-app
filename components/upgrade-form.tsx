@@ -103,7 +103,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
       if (followerCount < 10000) {
         toast({
           title: "Requirements Not Met",
-          description: "You need at least 10,000 X followers to upgrade to a Business account.",
+          description: "You need at least 10,000 X followers to upgrade to a Community Account.",
           variant: "destructive",
         })
         return
@@ -135,7 +135,7 @@ export default function UpgradeForm({ userId }: { userId: string }) {
 
   return (
     <div className="max-w-2xl mx-auto my-8 p-6 bg-white rounded-lg shadow-sm border">
-      <h1 className="text-3xl font-bold mb-6">Upgrade to Business Account</h1>
+      <h1 className="text-3xl font-bold mb-6">Upgrade to Community Account</h1>
 
       {step === 1 ? (
         <div className="space-y-6">
