@@ -39,7 +39,7 @@ export async function createContentToken(
   const walletClient = createWalletClient({
     account,
     chain: network,
-    transport: http(),
+    transport: http(client.rpcUrl),
   });
 
   // Get ContentFactory contract address and ABI
