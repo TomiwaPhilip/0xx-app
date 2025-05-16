@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { PrivyProvider } from "@privy-io/react-auth"
-import { base } from "viem/chains"
+import { base, baseSepolia } from "viem/chains"
 
 export default function PrivyAppProvider({ children }: { children: ReactNode }) {
   return (

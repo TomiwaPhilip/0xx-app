@@ -13,9 +13,9 @@ export default async function CreatePage() {
     redirect("/")
   }
 
-  if (user.userType !== "business") {
-    redirect("/profile/upgrade")
-  }
+  // if (user.userType !== "business") {
+  //   redirect("/profile/upgrade")
+  // }
 
   return (
     <main className="min-h-screen bg-white">

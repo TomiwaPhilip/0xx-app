@@ -1,0 +1,1 @@
+import {buyContentToken} from "../lib/content/trades"
