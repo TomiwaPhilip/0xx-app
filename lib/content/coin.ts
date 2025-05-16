@@ -21,7 +21,6 @@ const getContractsByChainId = (chainId: number) => {
 
 /**
  * Creates a new content token through the ContentFactory contract
- * @param privateKey The private key of the creator
  * @param name Name of the content token
  * @param symbol Symbol of the content token
  * @param contentURI URI pointing to the content metadata
