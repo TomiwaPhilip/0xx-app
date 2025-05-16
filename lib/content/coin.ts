@@ -5,7 +5,7 @@ import { networks } from "@/contract/config";
 import { base, baseSepolia } from "viem/chains";
 
 const network = networks.defaultNetwork === "base" ? base : baseSepolia;
-const client = networks[(networks.defaultNetwork as "base") || "baseSepolia"];
+const client = networks[networks.defaultNetwork as "base" | "baseSepolia"];
 const publicClient = createPublicClient({
   chain: network,
   transport: http(client.rpcUrl),
